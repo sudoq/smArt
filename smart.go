@@ -93,8 +93,8 @@ func saveCentroids(centroids []*data.Data, filename string){
 var inFilename string
 var outFilename string
 func init() {
-	flag.StringVar(&inFilename, "infile", "default_in.png", "Input filename")
-	flag.StringVar(&outFilename, "outfile", "default_out.png", "Output filename")
+	flag.StringVar(&inFilename, "infile", "default_input.png", "Input filename")
+	flag.StringVar(&outFilename, "outfile", "default_output.png", "Output filename")
 }
 
 func main(){
