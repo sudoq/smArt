@@ -40,3 +40,9 @@ func (data *Data) UpdateClassification(centroids []*Data){
 		}
 	}
 }
+
+func (data* Data) Waverage(item *Data, weigth float64) {
+	for i := range(data.Attributes){
+		data.Attributes[i] = data.Attributes[i]*(1.0-weigth) + item.Attributes[i]*weigth
+	}
+}
