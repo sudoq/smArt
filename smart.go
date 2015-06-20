@@ -29,7 +29,6 @@ func loadImage(filename string) []*data.Data{
 	}
 	defer reader.Close()
 
-	//reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(data))
 	m, _, err := image.Decode(reader)
 	if err != nil {
 		log.Fatal(err)
@@ -38,11 +37,6 @@ func loadImage(filename string) []*data.Data{
 
 	dataSet := make([]*data.Data, 0)
 
-	// Calculate a 16-bin histogram for m's red, green, blue and alpha components.
-	//
-	// An image's bounds do not necessarily start at (0, 0), so the two loops start
-	// at bounds.Min.Y and bounds.Min.X. Looping over Y first and X second is more
-	// likely to result in better memory access patterns than X first and Y second.
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			r, g, b, _ := m.At(x, y).RGBA()
@@ -56,7 +50,6 @@ func loadImage(filename string) []*data.Data{
 
 		}
 	}
-	// Print the results.
 	return dataSet
 }
 
@@ -68,7 +61,6 @@ func saveCentroids(centroids []*data.Data, filename string){
 	}
 	imgRect := image.Rect(0, 0, 100, 100)
 	img := image.NewRGBA(imgRect)
-	//draw.Draw(img, img.Bounds(), &image.Uniform{color.White}, image.ZP, draw.Src)
 	for y := 0; y < 100; y += 1 {
 		ci := int((float64(y)/100)*5);
 		r := uint8(centroids[ci].Attributes[0])
@@ -76,8 +68,6 @@ func saveCentroids(centroids []*data.Data, filename string){
 		b := uint8(centroids[ci].Attributes[2])
 		for x := 0; x < 100; x += 1 {
 			img.SetRGBA(x,y,color.RGBA{r,g,b,255})
-			//fill := &image.Uniform{color.RGBA{r, g, b, 255}}
-			//draw.Draw(img, image.Rect(x, y, x+10, y+10), fill, image.ZP, draw.Src)
 		}
 	}
 
@@ -97,7 +87,6 @@ func applyModel(inputFilename, outputFilename string, centroids []*data.Data){
 	}
 	defer reader.Close()
 
-	//reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(data))
 	m, _, err := image.Decode(reader)
 	if err != nil {
 		log.Fatal(err)
@@ -113,14 +102,9 @@ func applyModel(inputFilename, outputFilename string, centroids []*data.Data){
 	imgRect := image.Rect(bounds.Min.X, bounds.Min.Y, bounds.Max.X, bounds.Max.Y)
 	img := image.NewRGBA(imgRect)
 
-	// An image's bounds do not necessarily start at (0, 0), so the two loops start
-	// at bounds.Min.Y and bounds.Min.X. Looping over Y first and X second is more
-	// likely to result in better memory access patterns than X first and Y second.
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			r, g, b, _ := m.At(x, y).RGBA()
-			// A color's RGBA method returns values in the range [0, 65535].
-			// Shifting by 8 reduces this to the range [0, 255].
 			a0 := float64(r>>8)
 			a1 := float64(g>>8)
 			a2 := float64(b>>8)
@@ -146,9 +130,9 @@ var inFilename string
 var paletteFilename string
 var outFilename string
 func init() {
-	flag.StringVar(&inFilename, "infile", "default_input.png", "Input filename")
-	flag.StringVar(&paletteFilename, "palette", "default_palette.png", "Output palette filename")
-	flag.StringVar(&outFilename, "outfile", "default_output.png", "Output filename")
+	flag.StringVar(&inFilename, "in", "default_input.png", "Input filename")
+	flag.StringVar(&paletteFilename, "pal", "default_palette.png", "Output palette filename")
+	flag.StringVar(&outFilename, "out", "default_output.png", "Output filename")
 }
 
 func main(){
