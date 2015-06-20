@@ -2,10 +2,14 @@
 Machine learning color classification
 
 ## Example 
-Input picture
+Input training image
 
-![Input picture](default_input.png)
+![Input training image](default_input.png)
 
-Output results
+Output color palette
 
-![Output picture](default_output.png)
+![Output palette image](default_palette.png)
+
+Applied model to input picture
+
+![Output results] (default_output.png)
