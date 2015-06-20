@@ -43,7 +43,7 @@ func loadTrainingImage(filename string) ([]*data.Data, int, int) {
 			a0 := float64(r >> 8)
 			a1 := float64(g >> 8)
 			a2 := float64(b >> 8)
-			dataItem := data.New([]float64{a0, a1, a2}, 5)
+			dataItem := data.New([]float64{a0, a1, a2}, 8)
 			dataSet = append(dataSet, dataItem)
 		}
 	}
@@ -59,7 +59,7 @@ func saveCentroids(centroids []*data.Data, filename string) {
 	imgRect := image.Rect(0, 0, 100, 100)
 	img := image.NewRGBA(imgRect)
 	for y := 0; y < 100; y += 1 {
-		ci := int((float64(y) / 100) * 5)
+		ci := int((float64(y) / 100) * 8)
 		r := uint8(centroids[ci].Attributes[0])
 		g := uint8(centroids[ci].Attributes[1])
 		b := uint8(centroids[ci].Attributes[2])
@@ -143,13 +143,16 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	// TODO Read initial centroids from file
-	K := 5
+	K := 8
 	centroids := []*data.Data{
 		data.New([]float64{0.0, 0.0, 0.0}, K),       // Black
 		data.New([]float64{255.0, 255.0, 255.0}, K), // White
 		data.New([]float64{255.0, 0.0, 0.0}, K),     // Red
 		data.New([]float64{0.0, 255.0, 0.0}, K),     // Green
 		data.New([]float64{0.0, 0.0, 255.0}, K),     // Blue
+		data.New([]float64{255.0, 255.0, 0.0}, K),	 // Yellow
+		data.New([]float64{255.0, 0.0, 255.0}, K),	 // Magenta
+		data.New([]float64{0.0, 255.0, 255.0}, K),   // Cyan
 	}
 	fmt.Printf("%d * %d = %d\n", width, height, width*height)
 	wg := sync.WaitGroup{}
@@ -157,7 +160,6 @@ func main() {
 	centroidsChanged := true
 	var n int
 	for n = 0; n < 30 && centroidsChanged; n++ {
-		// TODO Check if the centroids is unchanged, if so, stop
 		sublength := height / sections // 640 / 8 = 80
 		wg.Add(sections)
 		for s := 0; s < sections; s++ {
