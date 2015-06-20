@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/SudoQ/smArt/data"
 	"math/rand"
+	"math"
 	"os"
 
 	"image"
@@ -153,7 +154,9 @@ func main() {
 	fmt.Printf("%d * %d = %d\n", width, height, width*height)
 	wg := sync.WaitGroup{}
 	sections := 8
-	for n := 0; n < 30; n++ {
+	centroidsChanged := true
+	var n int
+	for n = 0; n < 30 && centroidsChanged; n++ {
 		// TODO Check if the centroids is unchanged, if so, stop
 		sublength := height / sections // 640 / 8 = 80
 		wg.Add(sections)
@@ -186,6 +189,14 @@ func main() {
 			v.UpdateClassification(centroids)
 		}
 
+		currentAttributes := make([][]float64,0)
+		for _, c := range(centroids){
+			a0 := c.Attributes[0]
+			a1 := c.Attributes[1]
+			a2 := c.Attributes[2]
+			currentAttributes = append(currentAttributes, []float64{a0, a1, a2})
+		}
+
 		for _, v := range centroids {
 			v.UpdateClassification(centroids)
 		}
@@ -197,7 +208,18 @@ func main() {
 			centroids[ci].Waverage(dataItem, 1.0/cCount[ci])
 		}
 
+		centroidsChanged = false
+		for i, c := range(centroids){
+			for j := 0; j<3; j++ {
+				if math.Abs(currentAttributes[i][j] - c.Attributes[j]) > 0.5 {
+					centroidsChanged = true
+				}
+			}
+		}
+
 	}
+
+	fmt.Printf("Number of iterations: %d\n", n)
 	for i, item := range centroids {
 		r := uint32(item.Attributes[0])
 		g := uint32(item.Attributes[1])
