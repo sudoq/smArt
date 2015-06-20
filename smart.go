@@ -18,6 +18,8 @@ import (
 	"runtime"
 	"sync"
 	"time"
+	"encoding/csv"
+	"strconv"
 )
 
 func loadTrainingImage(filename string, numClasses int) ([]*data.Data, int, int) {
@@ -136,24 +138,42 @@ func init() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 }
 
+func readCentroids(filename string) []*data.Data {
+	csvfile, err := os.Open(filename)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	defer csvfile.Close()
+	reader := csv.NewReader(csvfile)
+	//reader.FieldsPerRecord = //3
+	rawCSVdata, err := reader.ReadAll()
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	k := len(rawCSVdata)
+	centroids := make([]*data.Data, 0)
+	for _, v := range rawCSVdata {
+		a0, _ := strconv.ParseFloat(v[0], 64)
+		a1, _ := strconv.ParseFloat(v[1], 64)
+		a2, _ := strconv.ParseFloat(v[2], 64)
+		centroids = append(centroids, data.New([]float64{a0, a1, a2}, k))
+	}
+	for _, each := range centroids {
+		fmt.Printf("%v\n", each)
+	}
+	return centroids
+}
+
 func main() {
 	flag.Parse()
-	K := 8
+	centroids := readCentroids("centroids.csv")
+	K := len(centroids)
 	dataSet, width, height := loadTrainingImage(trainingFilename, K)
 	fmt.Println(len(dataSet))
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	// TODO Read initial centroids from file
-	centroids := []*data.Data{
-		data.New([]float64{0.0, 0.0, 0.0}, K),       // Black
-		data.New([]float64{255.0, 255.0, 255.0}, K), // White
-		data.New([]float64{255.0, 0.0, 0.0}, K),     // Red
-		data.New([]float64{0.0, 255.0, 0.0}, K),     // Green
-		data.New([]float64{0.0, 0.0, 255.0}, K),     // Blue
-		data.New([]float64{255.0, 255.0, 0.0}, K),	 // Yellow
-		data.New([]float64{255.0, 0.0, 255.0}, K),	 // Magenta
-		data.New([]float64{0.0, 255.0, 255.0}, K),   // Cyan
-	}
 	fmt.Printf("%d * %d = %d\n", width, height, width*height)
 	wg := sync.WaitGroup{}
 	sections := 8
