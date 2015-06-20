@@ -153,6 +153,7 @@ func main(){
 	wg := sync.WaitGroup{}
 	sections := 8
 	for n:=0; n<30; n++ {
+	// TODO Check if the centroids is unchanged, if so, stop
 		sublength := height/sections // 640 / 8 = 80
 		wg.Add(sections)
 		for s := 0; s < sections; s++ {
