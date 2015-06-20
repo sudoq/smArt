@@ -7,22 +7,19 @@ import (
 	"os"
 	"flag"
 
-	//"encoding/base64"
 	"image"
 	"log"
-	//"strings"
 
 	_ "image/gif"
 	"image/png"
 	_"image/jpeg"
 	"time"
 	"image/color"
-	//"image/draw"
+	"sync"
+	"runtime"
 )
 
-func loadImage(filename string) []*data.Data{
-	// Decode the JPEG data. If reading from file, create a reader with
-
+func loadTrainingImage(filename string) ([]*data.Data, int, int){
 	reader, err := os.Open(filename)
 	if err != nil {
 	    log.Fatal(err)
@@ -45,12 +42,11 @@ func loadImage(filename string) []*data.Data{
 			a0 := float64(r>>8)
 			a1 := float64(g>>8)
 			a2 := float64(b>>8)
-			d := data.New([]float64{a0, a1, a2}, 5)
-			dataSet = append(dataSet, d)
-
+			dataItem := data.New([]float64{a0, a1, a2}, 5)
+			dataSet = append(dataSet, dataItem)
 		}
 	}
-	return dataSet
+	return dataSet, bounds.Dx(), bounds.Dy()
 }
 
 func saveCentroids(centroids []*data.Data, filename string){
@@ -105,16 +101,16 @@ func applyModel(inputFilename, outputFilename string, centroids []*data.Data){
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			r, g, b, _ := m.At(x, y).RGBA()
-			a0 := float64(r>>8)
-			a1 := float64(g>>8)
-			a2 := float64(b>>8)
-			d := data.New([]float64{a0, a1, a2}, 5)
-			d.UpdateClassification(centroids)
-			class := d.Classification
-			b0 := uint8(centroids[class].Attributes[0])
-			b1 := uint8(centroids[class].Attributes[1])
-			b2 := uint8(centroids[class].Attributes[2])
-			img.SetRGBA(x,y,color.RGBA{b0, b1, b2, 255})
+			r0 := float64(r>>8)
+			g0 := float64(g>>8)
+			b0 := float64(b>>8)
+			dataItem := data.New([]float64{r0, g0, b0}, len(centroids))
+			dataItem.UpdateClassification(centroids)
+			class := dataItem.Classification
+			r1 := uint8(centroids[class].Attributes[0])
+			g1 := uint8(centroids[class].Attributes[1])
+			b1 := uint8(centroids[class].Attributes[2])
+			img.SetRGBA(x,y,color.RGBA{r1, g1, b1, 255})
 		}
 	}
 	err = png.Encode(writer, img)
@@ -135,14 +131,16 @@ func init() {
 	flag.StringVar(&evalFilename, "eval", "default_eval.png", "Input evaluation filename")
 	flag.StringVar(&paletteFilename, "pal", "default_palette.png", "Output palette filename")
 	flag.StringVar(&resultFilename, "result", "default_output.png", "Output filename")
+	runtime.GOMAXPROCS(runtime.NumCPU())
 }
 
 func main(){
 	flag.Parse()
-	dataSet := loadImage(trainingFilename)
+	dataSet, width, height := loadTrainingImage(trainingFilename)
 	fmt.Println(len(dataSet))
 	rand.Seed(time.Now().UTC().UnixNano())
 
+	// TODO Read initial centroids from file
 	K := 5
 	centroids := []*data.Data{
 		data.New([]float64{0.0, 0.0, 0.0}, K),  // Black
@@ -151,11 +149,41 @@ func main(){
 		data.New([]float64{0.0, 255.0, 0.0}, K),	// Green
 		data.New([]float64{0.0, 0.0, 255.0}, K),	// Blue
 	}
-
-	for n:=0; n<20; n++ {
+	fmt.Printf("%d * %d = %d\n", width, height, width*height)
+	wg := sync.WaitGroup{}
+	sections := 8
+	for n:=0; n<30; n++ {
+		sublength := height/sections // 640 / 8 = 80
+		wg.Add(sections)
+		for s := 0; s < sections; s++ {
+			dh := s*sublength
+			go func(dh int){
+				for h:=dh; h<dh+(sublength); h++ {
+					for w:=0; w<width; w++ {
+						dataSet[(h*width)+w].UpdateClassification(centroids)
+					}
+				}
+			}(dh)
+			wg.Done()
+		}
+		wg.Wait()
+		/*
+		wg.Add(height)
+		for h:=0; h<height; h++ {
+			go func(h int) {
+				for w:=0; w<width; w++ {
+					dataSet[(h*width)+w].UpdateClassification(centroids)
+				}
+				wg.Done()
+			}(h)
+		}
+		wg.Wait()
+		*/
+		
 		for _, v := range(dataSet) {
 			v.UpdateClassification(centroids)
 		}
+		
 
 		for _, v := range(centroids){
 			v.UpdateClassification(centroids)
