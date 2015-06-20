@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-func loadTrainingImage(filename string) ([]*data.Data, int, int) {
+func loadTrainingImage(filename string, numClasses int) ([]*data.Data, int, int) {
 	reader, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
@@ -43,7 +43,7 @@ func loadTrainingImage(filename string) ([]*data.Data, int, int) {
 			a0 := float64(r >> 8)
 			a1 := float64(g >> 8)
 			a2 := float64(b >> 8)
-			dataItem := data.New([]float64{a0, a1, a2}, 8)
+			dataItem := data.New([]float64{a0, a1, a2}, numClasses)
 			dataSet = append(dataSet, dataItem)
 		}
 	}
@@ -59,7 +59,7 @@ func saveCentroids(centroids []*data.Data, filename string) {
 	imgRect := image.Rect(0, 0, 100, 100)
 	img := image.NewRGBA(imgRect)
 	for y := 0; y < 100; y += 1 {
-		ci := int((float64(y) / 100) * 8)
+		ci := int((float64(y) / 100) * float64(len(centroids)))
 		r := uint8(centroids[ci].Attributes[0])
 		g := uint8(centroids[ci].Attributes[1])
 		b := uint8(centroids[ci].Attributes[2])
@@ -138,12 +138,12 @@ func init() {
 
 func main() {
 	flag.Parse()
-	dataSet, width, height := loadTrainingImage(trainingFilename)
+	K := 8
+	dataSet, width, height := loadTrainingImage(trainingFilename, K)
 	fmt.Println(len(dataSet))
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	// TODO Read initial centroids from file
-	K := 8
 	centroids := []*data.Data{
 		data.New([]float64{0.0, 0.0, 0.0}, K),       // Black
 		data.New([]float64{255.0, 255.0, 255.0}, K), // White
