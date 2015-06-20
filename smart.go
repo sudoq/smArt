@@ -126,22 +126,22 @@ func applyModel(inputFilename, outputFilename string, centroids []*data.Data){
 	fmt.Printf("Generated image to %s\n",outputFilename)
 }
 
-var inFilename string
+var trainingFilename string
+var evalFilename string
 var paletteFilename string
-var outFilename string
+var resultFilename string
 func init() {
-	flag.StringVar(&inFilename, "in", "default_input.png", "Input filename")
+	flag.StringVar(&trainingFilename, "train", "default_input.png", "Input training filename")
+	flag.StringVar(&evalFilename, "eval", "default_eval.png", "Input evaluation filename")
 	flag.StringVar(&paletteFilename, "pal", "default_palette.png", "Output palette filename")
-	flag.StringVar(&outFilename, "out", "default_output.png", "Output filename")
+	flag.StringVar(&resultFilename, "result", "default_output.png", "Output filename")
 }
 
 func main(){
 	flag.Parse()
-	dataSet := loadImage(inFilename)
+	dataSet := loadImage(trainingFilename)
 	fmt.Println(len(dataSet))
 	rand.Seed(time.Now().UTC().UnixNano())
-
-	// Read image
 
 	K := 5
 	centroids := []*data.Data{
@@ -176,5 +176,5 @@ func main(){
 		fmt.Printf("Color %d: (%d, %d, %d)\n", i,r,g,b)
 	}
 	saveCentroids(centroids, paletteFilename)
-	applyModel(inFilename,outFilename,centroids)
+	applyModel(evalFilename,resultFilename,centroids)
 }
