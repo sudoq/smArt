@@ -178,10 +178,11 @@ func main() {
 
 	fmt.Printf("%d * %d = %d\n", width, height, width*height)
 	wg := sync.WaitGroup{}
-	sections := 8
+	sections := 16
 	centroidsChanged := true
 	var n int
 	for n = 0; n < 30 && centroidsChanged; n++ {
+		fmt.Printf("Iteration %d...\n", n)
 		sublength := height / sections // 640 / 8 = 80
 		wg.Add(sections)
 		for s := 0; s < sections; s++ {
@@ -192,10 +193,12 @@ func main() {
 						dataSet[(h*width)+w].UpdateClassification(centroids)
 					}
 				}
+				fmt.Printf("#")
+				wg.Done()
 			}(dh)
-			wg.Done()
 		}
 		wg.Wait()
+		fmt.Println()
 		/*
 			wg.Add(height)
 			for h:=0; h<height; h++ {
@@ -208,10 +211,15 @@ func main() {
 			}
 			wg.Wait()
 		*/
-
-		for _, v := range dataSet {
+		/*
+		dataSetSize := len(dataSet)
+		for i, v := range dataSet {
+			if i%(dataSetSize/8) == 0 {
+				fmt.Printf("#")
+			}
 			v.UpdateClassification(centroids)
 		}
+		*/
 
 		currentAttributes := make([][]float64,0)
 		for _, c := range(centroids){
