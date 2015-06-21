@@ -22,6 +22,7 @@ import (
 )
 
 func loadTrainingImage(filename string, numClasses int) ([]*data.Data, int, int) {
+	// Open and read image
 	reader, err := os.Open(filename)
 	if err != nil {
 		log.Fatal(err)
@@ -44,14 +45,16 @@ func loadTrainingImage(filename string, numClasses int) ([]*data.Data, int, int)
 			a0 := float64(r >> 8)
 			a1 := float64(g >> 8)
 			a2 := float64(b >> 8)
+			// Store rgb values in data set
 			dataItem := data.New([]float64{a0, a1, a2}, numClasses)
 			dataSet = append(dataSet, dataItem)
 		}
 	}
+	// Return data set, image width and height
 	return dataSet, bounds.Dx(), bounds.Dy()
 }
 
-func saveCentroids(centroids []*data.Data, filename string) {
+func saveModelImage(filename string, centroids []*data.Data) {
 	outfile, err := os.Create(filename)
 	if err != nil {
 		log.Println(err)
@@ -137,6 +140,7 @@ func init() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 }
 
+// TODO Add saveCentroids to CSV function
 func readCentroids(filename string) []*data.Data {
 	csvfile, err := os.Open(filename)
 	if err != nil {
@@ -145,7 +149,6 @@ func readCentroids(filename string) []*data.Data {
 	}
 	defer csvfile.Close()
 	reader := csv.NewReader(csvfile)
-	//reader.FieldsPerRecord = //3
 	rawCSVdata, err := reader.ReadAll()
 	if err != nil {
 		fmt.Println(err)
@@ -247,6 +250,9 @@ func main() {
 		b := uint32(item.Attributes[2])
 		fmt.Printf("Color %d: (%d, %d, %d)\n", i, r, g, b)
 	}
-	saveCentroids(centroids, paletteFilename)
+	// Save centroids as color palette
+	saveModelImage(paletteFilename, centroids)
+
+	// Apply model to image
 	applyModel(evalFilename, resultFilename, centroids)
 }
