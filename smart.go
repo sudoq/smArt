@@ -1,25 +1,24 @@
 package main
 
 import (
+	"encoding/csv"
 	"flag"
 	"fmt"
-	"github.com/SudoQ/smArt/data"
+	"image"
+	"image/color"
+	"image/png"
+	_ "image/gif"
+	_ "image/jpeg"
+	"log"
 	"math/rand"
 	"math"
 	"os"
-
-	"image"
-	"log"
-
-	"image/color"
-	_ "image/gif"
-	_ "image/jpeg"
-	"image/png"
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
-	"encoding/csv"
-	"strconv"
+
+	"github.com/SudoQ/smArt/data"
 )
 
 func loadTrainingImage(filename string, numClasses int) ([]*data.Data, int, int) {
