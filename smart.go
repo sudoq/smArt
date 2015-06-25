@@ -2,6 +2,9 @@ package main
 
 import (
 	"flag"
+	"log"
+	"fmt"
+	"os"
 	"runtime"
 	"github.com/SudoQ/smArt/model"
 )
@@ -22,13 +25,26 @@ func init() {
 	flag.StringVar(&resultFilename, "result", "default_output.png", "Output filename")
 	runtime.GOMAXPROCS(runtime.NumCPU())
 }
+
+func errorGate(err error){
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
+	}
+}
+
 func main() {
 	flag.Parse()
 	m := model.New()
-	m.Load(inCSVfilename)
-	m.Train(trainingFilename)
-	m.SaveCentroidsImage(paletteFilename)
-	m.Classify(evalFilename, resultFilename)
-	m.Save(outCSVfilename)
+	errorGate(m.Load(inCSVfilename))
+	fmt.Printf("Loaded model centroids from %s\n",inCSVfilename)
+	errorGate(m.Train(trainingFilename))
+	fmt.Printf("Trained model from image %s\n",trainingFilename)
+	errorGate(m.SaveCentroidsImage(paletteFilename))
+	fmt.Printf("Saved model color palette to %s\n", paletteFilename)
+	errorGate(m.Classify(evalFilename, resultFilename))
+	fmt.Printf("Classified image %s and generated image %s\n", evalFilename, resultFilename)
+	errorGate(m.Save(outCSVfilename))
+	fmt.Printf("Saved model centroids to %s\n",outCSVfilename)
 }
 
