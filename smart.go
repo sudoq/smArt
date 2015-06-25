@@ -1,37 +1,21 @@
 package main
 
 import (
-	/*
-		"encoding/csv"
-		"flag"
-		"fmt"
-		"image"
-		"image/color"
-		"image/png"
-		_ "image/gif"
-		_ "image/jpeg"
-		"log"
-		"math/rand"
-		"math"
-		"os"
-		"strconv"
-		"sync"
-		"time"
-
-		"github.com/SudoQ/smArt/data"
-	*/
-	"fmt"
 	"flag"
 	"runtime"
 	"github.com/SudoQ/smArt/model"
 )
 
+var inCSVfilename string
+var outCSVfilename string
 var trainingFilename string
 var evalFilename string
 var paletteFilename string
 var resultFilename string
 
 func init() {
+	flag.StringVar(&inCSVfilename, "incsv", "centroids_in.csv", "Input centroids CSV filename")
+	flag.StringVar(&outCSVfilename, "outcsv", "centroids_out.csv", "Output centroids CSV filename")
 	flag.StringVar(&trainingFilename, "train", "default_input.png", "Input training filename")
 	flag.StringVar(&evalFilename, "eval", "default_eval.png", "Input evaluation filename")
 	flag.StringVar(&paletteFilename, "pal", "default_palette.png", "Output palette filename")
@@ -41,11 +25,10 @@ func init() {
 func main() {
 	flag.Parse()
 	m := model.New()
-	m.Load("centroids.csv")
+	m.Load(inCSVfilename)
 	m.Train(trainingFilename)
 	m.SaveCentroidsImage(paletteFilename)
-	//m.Classify(evalFilename)
-	m.Save("centroids_out.csv")
-	fmt.Println(m)
+	m.Classify(evalFilename, resultFilename)
+	m.Save(outCSVfilename)
 }
 
