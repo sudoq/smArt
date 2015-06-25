@@ -1,131 +1,30 @@
 package main
 
 import (
-	"encoding/csv"
-	"flag"
+	/*
+		"encoding/csv"
+		"flag"
+		"fmt"
+		"image"
+		"image/color"
+		"image/png"
+		_ "image/gif"
+		_ "image/jpeg"
+		"log"
+		"math/rand"
+		"math"
+		"os"
+		"strconv"
+		"sync"
+		"time"
+
+		"github.com/SudoQ/smArt/data"
+	*/
 	"fmt"
-	"image"
-	"image/color"
-	"image/png"
-	_ "image/gif"
-	_ "image/jpeg"
-	"log"
-	"math/rand"
-	"math"
-	"os"
+	"flag"
 	"runtime"
-	"strconv"
-	"sync"
-	"time"
-
-	"github.com/SudoQ/smArt/data"
+	"github.com/SudoQ/smArt/model"
 )
-
-func loadTrainingImage(filename string, numClasses int) ([]*data.Data, int, int) {
-	// Open and read image
-	reader, err := os.Open(filename)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer reader.Close()
-
-	m, _, err := image.Decode(reader)
-	if err != nil {
-		log.Fatal(err)
-	}
-	bounds := m.Bounds()
-
-	dataSet := make([]*data.Data, 0)
-
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			r, g, b, _ := m.At(x, y).RGBA()
-			// A color's RGBA method returns values in the range [0, 65535].
-			// Shifting by 8 reduces this to the range [0, 255].
-			a0 := float64(r >> 8)
-			a1 := float64(g >> 8)
-			a2 := float64(b >> 8)
-			// Store rgb values in data set
-			dataItem := data.New([]float64{a0, a1, a2}, numClasses)
-			dataSet = append(dataSet, dataItem)
-		}
-	}
-	// Return data set, image width and height
-	return dataSet, bounds.Dx(), bounds.Dy()
-}
-
-func saveModelImage(filename string, centroids []*data.Data) {
-	outfile, err := os.Create(filename)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	imgRect := image.Rect(0, 0, 100, 100)
-	img := image.NewRGBA(imgRect)
-	for y := 0; y < 100; y += 1 {
-		ci := int((float64(y) / 100) * float64(len(centroids)))
-		r := uint8(centroids[ci].Attributes[0])
-		g := uint8(centroids[ci].Attributes[1])
-		b := uint8(centroids[ci].Attributes[2])
-		for x := 0; x < 100; x += 1 {
-			img.SetRGBA(x, y, color.RGBA{r, g, b, 255})
-		}
-	}
-
-	err = png.Encode(outfile, img)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	fmt.Printf("Generated image to %s\n", filename)
-}
-
-func applyModel(inputFilename, outputFilename string, centroids []*data.Data) {
-	reader, err := os.Open(inputFilename)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer reader.Close()
-
-	m, _, err := image.Decode(reader)
-	if err != nil {
-		log.Fatal(err)
-	}
-	bounds := m.Bounds()
-	writer, err := os.Create(outputFilename)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer writer.Close()
-
-	imgRect := image.Rect(bounds.Min.X, bounds.Min.Y, bounds.Max.X, bounds.Max.Y)
-	img := image.NewRGBA(imgRect)
-
-	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-		for x := bounds.Min.X; x < bounds.Max.X; x++ {
-			r, g, b, _ := m.At(x, y).RGBA()
-			r0 := float64(r >> 8)
-			g0 := float64(g >> 8)
-			b0 := float64(b >> 8)
-			dataItem := data.New([]float64{r0, g0, b0}, len(centroids))
-			dataItem.UpdateClassification(centroids)
-			class := dataItem.Classification
-			r1 := uint8(centroids[class].Attributes[0])
-			g1 := uint8(centroids[class].Attributes[1])
-			b1 := uint8(centroids[class].Attributes[2])
-			img.SetRGBA(x, y, color.RGBA{r1, g1, b1, 255})
-		}
-	}
-	err = png.Encode(writer, img)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	fmt.Printf("Generated image to %s\n", outputFilename)
-}
 
 var trainingFilename string
 var evalFilename string
@@ -139,128 +38,14 @@ func init() {
 	flag.StringVar(&resultFilename, "result", "default_output.png", "Output filename")
 	runtime.GOMAXPROCS(runtime.NumCPU())
 }
-
-// TODO Add saveCentroids to CSV function
-func readCentroids(filename string) []*data.Data {
-	csvfile, err := os.Open(filename)
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-	defer csvfile.Close()
-	reader := csv.NewReader(csvfile)
-	rawCSVdata, err := reader.ReadAll()
-	if err != nil {
-		fmt.Println(err)
-		return nil
-	}
-	k := len(rawCSVdata)
-	centroids := make([]*data.Data, 0)
-	for _, v := range rawCSVdata {
-		a0, _ := strconv.ParseFloat(v[0], 64)
-		a1, _ := strconv.ParseFloat(v[1], 64)
-		a2, _ := strconv.ParseFloat(v[2], 64)
-		centroids = append(centroids, data.New([]float64{a0, a1, a2}, k))
-	}
-	for _, each := range centroids {
-		fmt.Printf("%v\n", each)
-	}
-	return centroids
-}
-
 func main() {
 	flag.Parse()
-	centroids := readCentroids("centroids.csv")
-	K := len(centroids)
-	dataSet, width, height := loadTrainingImage(trainingFilename, K)
-	fmt.Println(len(dataSet))
-	rand.Seed(time.Now().UTC().UnixNano())
-
-	fmt.Printf("%d * %d = %d\n", width, height, width*height)
-	wg := sync.WaitGroup{}
-	sections := 16
-	centroidsChanged := true
-	var n int
-	for n = 0; n < 30 && centroidsChanged; n++ {
-		fmt.Printf("Iteration %d...\n", n)
-		sublength := height / sections // 640 / 8 = 80
-		wg.Add(sections)
-		for s := 0; s < sections; s++ {
-			dh := s * sublength
-			go func(dh int) {
-				for h := dh; h < dh+(sublength); h++ {
-					for w := 0; w < width; w++ {
-						dataSet[(h*width)+w].UpdateClassification(centroids)
-					}
-				}
-				fmt.Printf("#")
-				wg.Done()
-			}(dh)
-		}
-		wg.Wait()
-		fmt.Println()
-		/*
-			wg.Add(height)
-			for h:=0; h<height; h++ {
-				go func(h int) {
-					for w:=0; w<width; w++ {
-						dataSet[(h*width)+w].UpdateClassification(centroids)
-					}
-					wg.Done()
-				}(h)
-			}
-			wg.Wait()
-		*/
-		/*
-		dataSetSize := len(dataSet)
-		for i, v := range dataSet {
-			if i%(dataSetSize/8) == 0 {
-				fmt.Printf("#")
-			}
-			v.UpdateClassification(centroids)
-		}
-		*/
-
-		currentAttributes := make([][]float64,0)
-		for _, c := range(centroids){
-			a0 := c.Attributes[0]
-			a1 := c.Attributes[1]
-			a2 := c.Attributes[2]
-			currentAttributes = append(currentAttributes, []float64{a0, a1, a2})
-		}
-
-		for _, v := range centroids {
-			v.UpdateClassification(centroids)
-		}
-
-		cCount := make(map[int]float64)
-		for _, dataItem := range dataSet {
-			ci := dataItem.Classification
-			cCount[ci] += 1.0
-			centroids[ci].Waverage(dataItem, 1.0/cCount[ci])
-		}
-
-		centroidsChanged = false
-		for i, c := range(centroids){
-			for j := 0; j<3; j++ {
-				if math.Abs(currentAttributes[i][j] - c.Attributes[j]) > 0.5 {
-					centroidsChanged = true
-				}
-			}
-		}
-
-	}
-
-	fmt.Printf("Number of iterations: %d\n", n)
-	for i, item := range centroids {
-		r := uint32(item.Attributes[0])
-		g := uint32(item.Attributes[1])
-		b := uint32(item.Attributes[2])
-		fmt.Printf("Color %d: (%d, %d, %d)\n", i, r, g, b)
-	}
-	// Save centroids as color palette
-	saveModelImage(paletteFilename, centroids)
-
-	// Apply model to image
-	applyModel(evalFilename, resultFilename, centroids)
+	m := model.New()
+	m.Load("centroids.csv")
+	m.Train(trainingFilename)
+	m.SaveCentroidsImage(paletteFilename)
+	//m.Classify(evalFilename)
+	m.Save("centroids_out.csv")
+	fmt.Println(m)
 }
+
