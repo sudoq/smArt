@@ -17,12 +17,12 @@ var paletteFilename string
 var resultFilename string
 
 func init() {
-	flag.StringVar(&inCSVfilename, "incsv", "centroids_in.csv", "Input centroids CSV filename")
-	flag.StringVar(&outCSVfilename, "outcsv", "centroids_out.csv", "Output centroids CSV filename")
-	flag.StringVar(&trainingFilename, "train", "default_input.png", "Input training filename")
-	flag.StringVar(&evalFilename, "eval", "default_eval.png", "Input evaluation filename")
-	flag.StringVar(&paletteFilename, "pal", "default_palette.png", "Output palette filename")
-	flag.StringVar(&resultFilename, "result", "default_output.png", "Output filename")
+	flag.StringVar(&inCSVfilename, "incsv", "resources/centroids_in.csv", "Input centroids CSV filename")
+	flag.StringVar(&outCSVfilename, "outcsv", "resources/centroids_out.csv", "Output centroids CSV filename")
+	flag.StringVar(&trainingFilename, "train", "resources/default_input.png", "Input training filename")
+	flag.StringVar(&evalFilename, "eval", "resources/default_eval.png", "Input evaluation filename")
+	flag.StringVar(&paletteFilename, "pal", "resources/default_palette.png", "Output palette filename")
+	flag.StringVar(&resultFilename, "result", "resources/default_output.png", "Output result filename")
 	runtime.GOMAXPROCS(runtime.NumCPU())
 }
 
