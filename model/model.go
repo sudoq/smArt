@@ -9,7 +9,6 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	"image/png"
-	"log"
 	"math"
 	"os"
 	"strconv"
@@ -26,37 +25,33 @@ func New() *Model {
 	}
 }
 
-func (model *Model) Load(filename string) {
+func (model *Model) Load(filename string) error {
 	csvfile, err := os.Open(filename)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	defer csvfile.Close()
 	reader := csv.NewReader(csvfile)
 	rawCSVdata, err := reader.ReadAll()
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	k := len(rawCSVdata)
 	centroids := make([]*data.Data, 0)
 	for _, v := range rawCSVdata {
-		fmt.Println(v)
 		a0, _ := strconv.ParseFloat(v[0], 64)
 		a1, _ := strconv.ParseFloat(v[1], 64)
 		a2, _ := strconv.ParseFloat(v[2], 64)
 		centroids = append(centroids, data.New([]float64{a0, a1, a2}, k))
 	}
-	fmt.Println(centroids)
 	model.Centroids = centroids
+	return nil
 }
 
-func (model *Model) Save(filename string) {
+func (model *Model) Save(filename string) error {
 	csvfile, err := os.Create(filename)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 	defer csvfile.Close()
 	writer := csv.NewWriter(csvfile)
@@ -67,27 +62,18 @@ func (model *Model) Save(filename string) {
 			line[j] = fmt.Sprintf("%d.0", uint8(a))
 		}
 		lines = append(lines, line)
-		/*
-		err = writer.Write(line)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		*/
 	}
-	fmt.Println(lines)
 	err = writer.WriteAll(lines)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
+	return nil
 }
 
-func (model *Model) SaveCentroidsImage(filename string) {
+func (model *Model) SaveCentroidsImage(filename string) error {
 	outfile, err := os.Create(filename)
 	if err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 	imgRect := image.Rect(0, 0, 100, 100)
 	img := image.NewRGBA(imgRect)
@@ -103,24 +89,23 @@ func (model *Model) SaveCentroidsImage(filename string) {
 
 	err = png.Encode(outfile, img)
 	if err != nil {
-		fmt.Println(err)
-		return
+		return err
 	}
 
-	fmt.Printf("Generated image to %s\n", filename)
+	return nil
 }
 
-func loadTrainingImage(filename string, numClasses int) ([]*data.Data, int, int){
+func loadTrainingImage(filename string, numClasses int) ([]*data.Data, int, int, error){
 	// Open and read image
 	reader, err := os.Open(filename)
 	if err != nil {
-		log.Fatal(err)
+		return nil, 0, 0, err
 	}
 	defer reader.Close()
 
 	m, _, err := image.Decode(reader)
 	if err != nil {
-		log.Fatal(err)
+		return nil, 0, 0, err
 	}
 	bounds := m.Bounds()
 
@@ -140,11 +125,14 @@ func loadTrainingImage(filename string, numClasses int) ([]*data.Data, int, int)
 		}
 	}
 	// Return data set, image width and height
-	return dataSet, bounds.Dx(), bounds.Dy()
+	return dataSet, bounds.Dx(), bounds.Dy(), nil
 }
 
-func (model *Model) Train(filename string) {
-	dataSet, width, height := loadTrainingImage(filename, len(model.Centroids))
+func (model *Model) Train(filename string) error {
+	dataSet, width, height, err := loadTrainingImage(filename, len(model.Centroids))
+	if err != nil {
+		return err
+	}
 	wg := sync.WaitGroup{}
 	sections := 16
 	centroidsChanged := true
@@ -166,28 +154,6 @@ func (model *Model) Train(filename string) {
 			}(dh)
 		}
 		wg.Wait()
-		fmt.Println()
-		/*
-			wg.Add(model.TrainingImageSize[0])
-			for h:=0; h<model.TrainingImageSize[0]; h++ {
-				go func(h int) {
-					for w:=0; w<model.TrainingImageSize[1]; w++ {
-						dataSet[(h*model.TrainingImageSize[1])+w].UpdateClassification(model.Centroids)
-					}
-					wg.Done()
-				}(h)
-			}
-			wg.Wait()
-		*/
-		/*
-			dataSetSize := len(dataSet)
-			for i, v := range dataSet {
-				if i%(dataSetSize/8) == 0 {
-					fmt.Printf("#")
-				}
-				v.UpdateClassification(model.Centroids)
-			}
-		*/
 
 		currentAttributes := make([][]float64, 0)
 		for _, c := range model.Centroids {
@@ -202,11 +168,15 @@ func (model *Model) Train(filename string) {
 		}
 
 		cCount := make(map[int]float64)
-		for _, dataItem := range dataSet {
+		for i, dataItem := range dataSet {
 			ci := dataItem.Classification
 			cCount[ci] += 1.0
 			model.Centroids[ci].Waverage(dataItem, 1.0/cCount[ci])
+			if (i % len(dataSet)/8) == 0 {
+				fmt.Printf("#")
+			}
 		}
+		fmt.Println()
 
 		centroidsChanged = false
 		for i, c := range model.Centroids {
@@ -225,24 +195,24 @@ func (model *Model) Train(filename string) {
 		b := uint32(item.Attributes[2])
 		fmt.Printf("Color %d: (%d, %d, %d)\n", i, r, g, b)
 	}
+	return nil
 }
 
-func (model *Model) Classify(inputFilename, outputFilename string) {
+func (model *Model) Classify(inputFilename, outputFilename string) error {
 	reader, err := os.Open(inputFilename)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer reader.Close()
 
 	m, _, err := image.Decode(reader)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	bounds := m.Bounds()
 	writer, err := os.Create(outputFilename)
 	if err != nil {
-		log.Println(err)
-		return
+		return err
 	}
 	defer writer.Close()
 
@@ -266,9 +236,7 @@ func (model *Model) Classify(inputFilename, outputFilename string) {
 	}
 	err = png.Encode(writer, img)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		return err
 	}
-
-	fmt.Printf("Generated image to %s\n", outputFilename)
+	return nil
 }
