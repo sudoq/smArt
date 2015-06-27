@@ -21,7 +21,7 @@ type Model struct {
 
 func New() *Model {
 	return &Model{
-		Centroids:         make([]*data.Data, 0),
+		Centroids: make([]*data.Data, 0),
 	}
 }
 
@@ -95,7 +95,7 @@ func (model *Model) SaveCentroidsImage(filename string) error {
 	return nil
 }
 
-func loadTrainingImage(filename string, numClasses int) ([]*data.Data, int, int, error){
+func loadTrainingImage(filename string, numClasses int) ([]*data.Data, int, int, error) {
 	// Open and read image
 	reader, err := os.Open(filename)
 	if err != nil {
@@ -172,7 +172,7 @@ func (model *Model) Train(filename string) error {
 			ci := dataItem.Classification
 			cCount[ci] += 1.0
 			model.Centroids[ci].Waverage(dataItem, 1.0/cCount[ci])
-			if (i % len(dataSet)/8) == 0 {
+			if (i % len(dataSet) / 8) == 0 {
 				fmt.Printf("#")
 			}
 		}
