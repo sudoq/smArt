@@ -13,7 +13,13 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"math/rand"
+	"time"
 )
+
+func init(){
+	rand.Seed(int64(time.Now().Nanosecond()))
+}
 
 type Model struct {
 	Centroids []*data.Data
@@ -128,16 +134,46 @@ func loadTrainingImage(filename string, numClasses int) ([]*data.Data, int, int,
 	return dataSet, bounds.Dx(), bounds.Dy(), nil
 }
 
-func (model *Model) Train(filename string) error {
-	dataSet, width, height, err := loadTrainingImage(filename, len(model.Centroids))
+func intInSlice(value int, slice []int) bool {
+	for _, elem := range slice {
+		if value == elem {
+			return true
+		}
+	}
+	return false
+}
+
+func (model *Model) Train(filename string, numClasses, maxIterations int) error {
+	dataSet, width, height, err := loadTrainingImage(filename, numClasses)
 	if err != nil {
 		return err
 	}
+
+	// Select random starting centroids
+	selections := make([]int, 0)
+	for i:=0; i<numClasses; i++ {
+		randIndex := rand.Intn(len(dataSet))
+		for intInSlice(randIndex, selections) {
+			randIndex = rand.Intn(len(dataSet))
+		}
+		selections = append(selections, randIndex)
+	}
+
+	model.Centroids = make([]*data.Data, 0)
+	for _, randIndex := range selections {
+		dataItem := dataSet[randIndex]
+		a0 := dataItem.Attributes[0]
+		a1 := dataItem.Attributes[1]
+		a2 := dataItem.Attributes[2]
+		centroid := data.New([]float64{a0, a1, a2}, numClasses)
+		model.Centroids = append(model.Centroids, centroid)
+	}
+
 	wg := sync.WaitGroup{}
 	sections := 16
 	centroidsChanged := true
 	var n int
-	for n = 0; n < 30 && centroidsChanged; n++ {
+	for n = 0; n < maxIterations && centroidsChanged; n++ {
 		fmt.Printf("Iteration %d...\n", n)
 		sublength := width / sections // 640 / 8 = 80
 		wg.Add(sections)

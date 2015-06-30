@@ -21,6 +21,8 @@ var resultFilename string
 
 var trainingTarget string
 var classifyTarget string
+var numClasses int
+var maxIterations int
 
 func init() {
 	/*
@@ -33,6 +35,8 @@ func init() {
 	*/
 	flag.StringVar(&trainingTarget, "t", "resources/default.png", "Input training image")
 	flag.StringVar(&classifyTarget, "c", "resources/default.png", "Input classify image")
+	flag.IntVar(&numClasses, "n", 5, "Number of classes")
+	flag.IntVar(&maxIterations, "m", 30, "Max number of iterations")
 	runtime.GOMAXPROCS(runtime.NumCPU())
 }
 
@@ -56,7 +60,6 @@ func main() {
 	trainingBase, _ := splitExt(trainingTarget)
 	classifyBase, _ := splitExt(classifyTarget)
 
-	inCSVfilename := "resources/init.csv"
 	outCSVfilename := trainingBase + ".csv"
 	trainingFilename := trainingTarget
 	evalFilename := classifyTarget
@@ -64,9 +67,7 @@ func main() {
 	resultFilename := classifyBase + "_out.png"
 
 	m := model.New()
-	errorGate(m.Load(inCSVfilename))
-	fmt.Printf("Loaded model centroids from %s\n", inCSVfilename)
-	errorGate(m.Train(trainingFilename))
+	errorGate(m.Train(trainingFilename, numClasses, maxIterations))
 	fmt.Printf("Trained model from image %s\n", trainingFilename)
 	errorGate(m.SaveCentroidsImage(paletteFilename))
 	fmt.Printf("Saved model color palette to %s\n", paletteFilename)
