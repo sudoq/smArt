@@ -10,33 +10,16 @@ import (
 	"runtime"
 )
 
-/*
-var inCSVfilename string
-var outCSVfilename string
-var trainingFilename string
-var evalFilename string
-var paletteFilename string
-var resultFilename string
-*/
-
 var trainingTarget string
 var classifyTarget string
 var numClasses int
 var maxIterations int
 
 func init() {
-	/*
-		flag.StringVar(&inCSVfilename, "incsv", "resources/centroids_in.csv", "Input centroids CSV filename")
-		flag.StringVar(&outCSVfilename, "outcsv", "resources/centroids_out.csv", "Output centroids CSV filename")
-		flag.StringVar(&trainingFilename, "train", "resources/default_input.png", "Input training filename")
-		flag.StringVar(&evalFilename, "eval", "resources/default_eval.png", "Input evaluation filename")
-		flag.StringVar(&paletteFilename, "pal", "resources/default_palette.png", "Output palette filename")
-		flag.StringVar(&resultFilename, "result", "resources/default_output.png", "Output result filename")
-	*/
 	flag.StringVar(&trainingTarget, "t", "resources/default.png", "Input training image")
 	flag.StringVar(&classifyTarget, "c", "resources/default.png", "Input classify image")
-	flag.IntVar(&numClasses, "n", 5, "Number of classes")
-	flag.IntVar(&maxIterations, "m", 30, "Max number of iterations")
+	flag.IntVar(&maxIterations, "n", 30, "Max number of iterations")
+	flag.IntVar(&numClasses, "m", 5, "Number of classes")
 	runtime.GOMAXPROCS(runtime.NumCPU())
 }
 
