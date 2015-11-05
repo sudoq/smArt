@@ -10,14 +10,14 @@ import (
 	_ "image/jpeg"
 	"image/png"
 	"math"
+	"math/rand"
 	"os"
 	"strconv"
 	"sync"
-	"math/rand"
 	"time"
 )
 
-func init(){
+func init() {
 	rand.Seed(int64(time.Now().Nanosecond()))
 }
 
@@ -151,7 +151,7 @@ func (model *Model) Train(filename string, numClasses, maxIterations int) error 
 
 	// Select random starting centroids
 	selections := make([]int, 0)
-	for i:=0; i<numClasses; i++ {
+	for i := 0; i < numClasses; i++ {
 		randIndex := rand.Intn(len(dataSet))
 		for intInSlice(randIndex, selections) {
 			randIndex = rand.Intn(len(dataSet))
