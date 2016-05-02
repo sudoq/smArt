@@ -4,22 +4,22 @@ import (
 	"flag"
 	"fmt"
 	"github.com/SudoQ/smArt/data"
-	"math/rand"
 	"math"
+	"math/rand"
 	"os"
 
 	"image"
 	"log"
 
+	"encoding/csv"
 	"image/color"
 	_ "image/gif"
 	_ "image/jpeg"
 	"image/png"
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
-	"encoding/csv"
-	"strconv"
 )
 
 func loadTrainingImage(filename string, numClasses int) ([]*data.Data, int, int) {
@@ -211,8 +211,8 @@ func main() {
 			v.UpdateClassification(centroids)
 		}
 
-		currentAttributes := make([][]float64,0)
-		for _, c := range(centroids){
+		currentAttributes := make([][]float64, 0)
+		for _, c := range centroids {
 			a0 := c.Attributes[0]
 			a1 := c.Attributes[1]
 			a2 := c.Attributes[2]
@@ -231,9 +231,9 @@ func main() {
 		}
 
 		centroidsChanged = false
-		for i, c := range(centroids){
-			for j := 0; j<3; j++ {
-				if math.Abs(currentAttributes[i][j] - c.Attributes[j]) > 0.5 {
+		for i, c := range centroids {
+			for j := 0; j < 3; j++ {
+				if math.Abs(currentAttributes[i][j]-c.Attributes[j]) > 0.5 {
 					centroidsChanged = true
 				}
 			}
